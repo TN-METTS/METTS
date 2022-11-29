@@ -1,6 +1,12 @@
 function equality = Test_sweeps()
-%TEST_SWEEPS 이 함수의 요약 설명 위치
-%   자세한 설명 위치
+% This function test sweeping function "MPO_multiplication_sweep" 
+% B = MPO_multiplication_sweep(W, A, Nkeep, Nsweep);
+% generate random MPS, MPO and compare whether the function works well. 
+% 
+% Returns 
+%   Equality(boolean) : whether the output of the function equals expected output 
+% 
+% Written by M.Kim (Nov.29,2022)
 
 % generate sample input MPS A, MPO W 
 A = cell(1, 4);
