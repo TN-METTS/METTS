@@ -14,7 +14,7 @@ function B = MPO_multiplication_sweep(W, A, Init_B, Nkeep, Nsweep)
 %       |3      |3          |3              *      *             *
 %                                           |2     |2            |2                                      
 %                                       --W{1}----W{2}---.... - W{N}--
-%                                         3 | 4   3 | 4         3 | 4 
+%                                       3   |  4 3  |  4      3   | 4 
 %                                           |1      |1            |1 
 % Note that it start sweep from right to left. 
 %
