@@ -1,32 +1,28 @@
-function M = CPS_collapse(M,dim)
-% <Description>
-%
+function M = CPS_collapse(M,dim,print_log)
 % M = CPS_collapse(M,dim) 
 %
-% Obtain CPS by collapsing METTS
+% Obtain CPS by collapsing METTS; collapsed state is determined at each site randomly
 % 
 %
 %
-% < Input >
+% Input :
 % M : [1 x N cell array] Matrix product state to collapse 
+%
 %    1      2   1      2         1        2
 %   ---M{1}---*---M{2}---* ... *---M{end}---
 %       |          |                 |
 %       ^3         ^3                ^3
-% dim : [integer] dimension of local Hilbert space (i.e. the dimension of 3rd leg of the each site)
 %
-% 
-% < Output >
+% dim : [integer] dimension of local Hilbert space (i.e. the dimension of physical
+% leg)
+% print_log [logical]  
+%
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
 %
-%
-% Written by HM.Kim (Dec.01,2022) 
-%
-
-
-tobj = tic2;
-
+if print_log
+    tobj = tic2;
+end
 
 N = numel(M); % the number of sites
 
@@ -74,9 +70,15 @@ for it = (1:N-1)
     M{it} = permute(U,[1 3 2]);
     S = contract(diag(S),2,2,Vd,2,1);
     M{it+1} = contract(S,2,2,M{it+1},3,1);
+    
+    % CPS noise ? 
 end
 
-toc2(tobj,'-v');
+if print_log
+    toc2(tobj,'-v');
+    chkmem;
+end
 
 end
+
 
