@@ -1,4 +1,4 @@
-function M = CPS_collapseonly(M,dim,s)
+function M = CPS_collapseonly(M,dim,s,print_log)
 % M = CPS_collapse(M,dim,S,n) 
 %
 % Obtain CPS by collapsing METTS; collapsed state is the eigenstate of spin operator along the axis.
@@ -25,7 +25,9 @@ function M = CPS_collapseonly(M,dim,s)
 % product space)
 %
 
-tobj = tic2;
+if print_log
+    tobj = tic2;
+end
 
 
 N = numel(M); % the number of sites
@@ -78,8 +80,11 @@ end
 
 disptime(['Collapsed along the',axis,'axis']);
 
-
-toc2(tobj,'-v');
+if print_log
+    disptime(['Collapsed along the',axis,'axis']);
+    toc2(tobj,'-v');
+    chkmem;
+end
 
 end
 
