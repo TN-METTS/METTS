@@ -1,18 +1,7 @@
-function [ts,M,Ovals,EE,dw] = tDMRG (M,Hs,O,Nkeep,dt,tmax)
+function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax)
 % < Description >
 %
-% [ts,M,Ovals,EE,dw] = tDMRG (M,Hs,O,Nkeep,dt,tmax)
-%
-% The time-dependent DMRG (tDMRG) method that simulates real-time evolution
-% of matrix product state (MPS), for an one-dimensional system whose
-% Hamiltonian contains only nearest-neighbor terms, described by Hs{..}.
-% The function uses the second-order Trotter decomposition: the time
-% evolution operator for time step dt is decomposed into exp(-dt/2*Hodd) * 
-% exp(-dt*Heven) * exp(-dt/2*Hodd). Those exponential terms in the
-% decomposition are applied bond by bond; after acting an exponential term,
-% the corresponding bond is truncated via SVDe3.
-% This function also computes the expectation value of the local operator O
-% is evaluated for every site and every time instances. 
+% [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax)
 %
 % < Input >
 % M : [cell] The initial state as the MPS. The length of M, i.e., numel(M),
@@ -45,6 +34,7 @@ function [ts,M,Ovals,EE,dw] = tDMRG (M,Hs,O,Nkeep,dt,tmax)
 % < Output >
 % ts : [numeric] Row vector of discrete time values.
 % M : [cell] The final MPS after real-time evolution.
+%            In right(left)-canonical form if Nstep is even(odd) 
 % Ovals : [matrix] Ovals(m,n) indicates the expectation value of local
 %       operator O (input) at the site n and time ts(m).
 % EE : [matrix] EE(m,n) indicates the entanglement entropy (with base 2) of
@@ -84,6 +74,8 @@ for itN = (1:numel(Hs))
     end
 end
 % % % 
+% save initial orthonormal state 
+initial_state = M(:); 
 
 Nstep = ceil(tmax/dt);
 
@@ -94,7 +86,7 @@ EE = zeros(3*Nstep,numel(M)-1);
 dw = zeros(size(EE));
 
 % show information
-fprintf('tDMRG : Real-time evolution with local measurements\n');
+fprintf('TS-1D : Imaginary-time evolution with local measurements\n');
 fprintf(['N = ',sprintf('%i',numel(M)),', Nkeep = ',sprintf('%i',Nkeep), ...
     ', dt = ',sprintf('%.4g',dt),', tmax = ',sprintf('%g',ts(end)), ...
     ' (',sprintf('%.4g',Nstep),' steps)\n']);
@@ -112,7 +104,7 @@ for it1 = (1:numel(Hs))
             ttmp = dt;
         end
         [VH,DH] = eig(Htmp);
-        eH = VH*diag(exp((-1i*ttmp)*diag(DH)))*VH';
+        eH = VH*diag(exp((-ttmp)*diag(DH)))*VH';
         expH{it1} = reshape(eH,[sdim sdim]);
     end
 end
@@ -138,10 +130,10 @@ for it1 = (1:3*Nstep)
     % % % % TODO (start) % % % %
     % call local function tDMRG_1sweep which is written below in this file.
     [M,EE(it1,:),dw(it1,:)] = tDMRG_1sweep(M,expHtmp,Nkeep,mod(it1,2));
-    
+    M = normalize(initial_state, M);
     if mod(it1,3) == 0
         % evaluate local expectation values
-        Ovals(it1/3,:) = tDMRG_expVal(M,O,mod(it1,2));
+        Ovals(it1/3,:) = exp_val(M,O,mod(it1,2));
     end
     % % % % TODO (end) % % % %
         
@@ -149,6 +141,7 @@ for it1 = (1:3*Nstep)
         disptime(['#',sprintf('%i/%i',[it1/3,Nstep]), ...
             ' : t = ',sprintf('%g/%g',[ts(it1/3),ts(end)])]);
     end
+
 end
 
 toc2(tobj,'-v');
@@ -223,46 +216,19 @@ else % right -> left
         % update M{it}
         M{it} = contract(U,3,3,diag(S),2,1,[1 3 2]);
     end
-    M{1} = M{1}/norm(M{1}(:)); % to normalize the norm of MPS
+    % M{1} = M{1}/norm(M{1}(:)); % to normalize the norm of MPS
 end
 % % % % TODO (end) % % % %
 
 end
 
-function Ovals = tDMRG_expVal (M,O,isleft)
-% Expectation values of local operator O (acting on only one site) for
-% given MPS.
-%
-% < Input >
-% M : [cell] Input MPS.
-% O : [matrix] Rank-2 operator acting on one site.
-% isleft : [logical] If true, it means that the MPS M is in left-canonical
-%       form. Otherwise, right-canonical form.
-%
-% < Output >
-% Ovals : [vector] Expectation value of operator O. It will substitute the
-%       rows of Ovals in the main function tDMRG.
 
-N = numel(M);
-Ovals = zeros(1,N);
-
-MM = 1; % contraction of bra/ket tensors
-if isleft % left-normalized
-    for itN = (N:-1:1)
-        T = permute(M{itN},[2 1 3]); % permute left<->right to make use of updateLeft
-        T2 = contract(MM,2,2,T,3,1);
-        T2 = contract(T2,3,3,O,2,2);
-        Ovals(itN) = contract(conj(T),3,(1:3),T2,3,(1:3));
-        MM = updateLeft(MM,2,T,[],[],T);
-    end
-else % right-normalized
-    for itN = (1:N)
-        T2 = contract(MM,2,2,M{itN},3,1);
-        T2 = contract(T2,3,3,O,2,2);
-        Ovals(itN) = contract(conj(M{itN}),3,(1:3),T2,3,(1:3));
-        MM = updateLeft(MM,2,M{itN},[],[],M{itN});
+function M = normalize(initial_state, M)
+    N = numel(M); 
+    for itN=(1:N)
+        P = contract(M{itN}, 3, [1 2 3], conj(initial_state{itN}), 3,[1 2 3]);
+        M{itN} = M{itN}./sqrt(P);
     end 
-end
+end 
 
-end
 
