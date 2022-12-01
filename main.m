@@ -2,8 +2,11 @@ clear
 % system parameter
 J = 1; % coupling strength
 L = 4; % number of sites in a chain
-T = 0.05; 
-SN =50; 
+T = 0.05; % temperature
+SN =50; % sampling number
+
+%log
+print_log = false;
 
 % Imaginary time evolution parameters
 Nkeep = 20; % bond dimension
@@ -51,12 +54,13 @@ Hs{end} = Hs{end}(:,:,:,1); % choose the first components of the right leg
 M = cell(1,L);
 for itN = (1:L)
     if itN <= (L/2)
-        M{itN} = permute([1,0,0],[1 3 2]);
+        M{itN} = permute(rand(1, 3),[1 3 2]);
     else
-        M{itN} = permute([0,0,1],[1 3 2]);
+        M{itN} = permute(rand(1, 3),[1 3 2]);
     end
 end
-M = CPS_collapse(M, 3);
+
+M = CPS_collapse(M, size(M{1}, 3));
 
 % operator to measure magnetization
 Sz = S(:,:,2);
@@ -64,9 +68,9 @@ operator = Hs;
 E = zeros(1, SN);
 % TS_1D
 for itS=(1:SN)
-    [ts,M,Ovals,EE,dw] = TS_1D(M, H, operator, Nkeep, dt, beta/2, false);
+    [ts,M,Ovals,EE,dw] = TS_1D(M, H, [], Nkeep, dt, beta/2, print_log);
     E(itS) = exp_val(M, operator);
-    M = CPS_collapse(M, size(M{1}, 3));
+    M = CPS_collapse(M, size(M{1}, 3));%,print_log);
 end 
 mean(E)
 

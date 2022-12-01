@@ -80,6 +80,7 @@ end
 end
 
 function [B, C] =zipup_MPS(W, A, Nkeep, Skeep)
+    N = numel(W);
     % malloc mem for return 
     B = cell(1, N);
     C = 1; 

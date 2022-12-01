@@ -1,7 +1,16 @@
-function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax, print_log)
+function [M, isright] = TS_1D(M, Hs, Nkeep, dt, beta, print_log)
 % < Description >
 %
-% [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax, print_log)
+% [M, isright] = TS_1D(M,Hs, Nkeep, dt, beta, print_log)
+%
+% Imaginary time evolution using second order trotter decomposition. 
+% To get the partial density matrix, evole (ibeta) time with Hamiltonian. 
+% The final state is |phi> such that |phi> = e^(-beta*H)|phi_0>
+% Using basis, approximate the density matrix (e^(- 2*beta*H)) using many
+% number of |phi_0>s
+%
+% It is suitable for Hamiltonian which contains only nearest neighbor interaction 
+% It is revised from tDMRG function by S.Lee(Oct.08,2022)
 %
 % < Input >
 % M : [cell] The initial state as the MPS. The length of M, i.e., numel(M),
@@ -24,43 +33,26 @@ function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax, print_log)
 %       |      |
 %       1      3
 %
-% O : [matrix] Rank-2 tensor as a local operator acting on a site.
 % Nkeep : [integer] Maximum bond dimension.
-% dt : [numeric] Time step size. Each real-time evolution by step dt
-%       consists of three exponential terms, exp(-1i*dt/2*Hodd) *
-%       exp(-1i*dt*Heven) * exp(-1i*dt/2*Hodd).
-% tmax : [numeric] Maximum time range.
+% dt : [numeric] Time step size. Each imaginary-time evolution by step dt
+%       consists of three exponential terms, exp(-dt/2*Hodd) *
+%       exp(-dt*Heven) * exp(-dt/2*Hodd).
+% beta : [numeric] max imaginary time. Inverse of temperature(setting boltzman constant=1) 
 %
 % < Output >
-% ts : [numeric] Row vector of discrete time values.
 % M : [cell] The final MPS after real-time evolution.
 %            In right(left)-canonical form if Nstep is even(odd) 
-% Ovals : [matrix] Ovals(m,n) indicates the expectation value of local
-%       operator O (input) at the site n and time ts(m).
-% EE : [matrix] EE(m,n) indicates the entanglement entropy (with base 2) of
-%       the MPS with respect to the bipartition cutting the bond between
-%       the sites n and n+1, after applying the m-th row of time evolution
-%       gates. For m's that are multiples of 3, EE(m/3,:) indicates the
-%       entanglement entropy at time ts(m/3). Since the base 2 is chosen,
-%       the value 1 of the entanglement entropy means one "ebit".
-% dw : [matrix] Discarded weights (i.e., the sum of the squares of the
-%       discarded singular values) after appying a row of time evolution
-%       gates. dw(m,n) corresponds to the same bond and Trotter step
-%       associated with EE(m,n).
-%
-% Written by S.Lee (Jun.19,2017); updated by S.Lee (Jun.22,2017)
-% Updated by S.Lee (Jun.07,2019): Revised for SoSe 2019.
-% Updated by S.Lee (Oct.08,2022): Revised for the course at SNU.
+% isright: [boolean] whether right(left)-canonical form
+
+% Rewritten by M.Kim (Nov.30,2022)
 
 if print_log
-
     tobj = tic2;
 end
+
 % % % check the integrity of input
 if numel(M) ~= (numel(Hs)+1)
     error('ERR: it should be: numel(M) == (numel(Hs)+1)');
-elseif ~ismatrix(O)
-    error('ERR: local operator O should be rank 2.');
 end
 
 for itN = (1:numel(Hs))
@@ -75,33 +67,11 @@ for itN = (1:numel(Hs))
     end
 end
 % % % 
-% save initial orthonormal state 
-%initial_state = M(:); 
 
-Nstep = ceil(tmax/dt);
-
-% results
+Nstep = ceil(beta/dt);
+isright = mod(Nstep, 2); %In right(left)-canonical form if Nstep is even(odd) 
 ts = dt*(1:Nstep);
-if ~isempty(O) 
-    if numel(O)==numel(M)
-        Ovals = zeros(Nstep,1);
-    elseif numel(O)==1
-        Ovals = zeros(Nstep, numel(M));
-    end
-else 
-    Ovals = [];
-end
-EE = zeros(3*Nstep,numel(M)-1);
-dw = zeros(size(EE));
 
-% show information
-if print_log
-
-    fprintf('TS-1D : Imaginary-time evolution with local measurements\n');
-    fprintf(['N = ',sprintf('%i',numel(M)),', Nkeep = ',sprintf('%i',Nkeep), ...
-        ', dt = ',sprintf('%.4g',dt),', tmax = ',sprintf('%g',ts(end)), ...
-        ' (',sprintf('%.4g',Nstep),' steps)\n']);
-end
 % generate the unitray operator exp(-it*H) for each two-site pairs
 expH = cell(1,numel(Hs));
 for it1 = (1:numel(Hs))
@@ -141,14 +111,8 @@ for it1 = (1:3*Nstep)
     end
     
     % call local function tDMRG_1sweep which is written below in this file.
-    [M,EE(it1,:),dw(it1,:)] = tDMRG_1sweep(M,expHtmp,Nkeep,mod(it1,2));
-    if mod(it1,3) == 0
-        if ~isempty(O)
-            % evaluate expectation values
-            Ovals(it1/3,:) = exp_val(M,O,mod(it1,2));
-        end
-
-    end
+    [M] = tDMRG_1sweep(M,expHtmp,Nkeep,mod(it1,2));
+    
 
     M = normalize(M);
     if print_log 
@@ -163,9 +127,10 @@ if print_log
     toc2(tobj,'-v');
     chkmem;
 end
+
 end
 
-function [M,EE,dw] = tDMRG_1sweep (M,expH,Nkeep,isright)
+function M = tDMRG_1sweep (M,expH,Nkeep,isright)
 % Apply exp(-it*Heven/odd), which is a row of two-site gates acting on
 % either even or odd bonds, and then truncate bonds by using SVD. After
 % applying this function, left-canonical state becomes right-canonical, and
@@ -173,7 +138,7 @@ function [M,EE,dw] = tDMRG_1sweep (M,expH,Nkeep,isright)
 %
 % < Input >
 % M : [cell] Input MPS.
-% expH : [cell] exp(-i*H*T) unitary operators for each bond. The length
+% expH : [cell] exp(-H*T) unitary operators for each bond. The length
 %       should satisfy numel(expH) == numel(M)-1. And the every first (or
 %       second) elements should be empty, since we act either even or odd
 %       bonds at once.
@@ -182,14 +147,10 @@ function [M,EE,dw] = tDMRG_1sweep (M,expH,Nkeep,isright)
 %       right-to-left sweep.
 % 
 % < Output >
-% M : [cell] MPS after applying exp(-it*H) and truncating bonds.
-% EE : [numeric vector] Entanglement entropy at each bond.
-% dw : [numeric vector] Discarded weights when truncating the bond
+% M : [cell] MPS after applying exp(-t*H) and truncating bonds.
 %       dimensions.
     
 N = numel(M);
-EE = zeros(1,N-1);
-dw = zeros(1,N-1);
 Skeep = 1e-8;
 
 if isright % left -> right
@@ -200,17 +161,12 @@ if isright % left -> right
             T = contract(expH{it},4,[3 4],T,4,[2 3],[3 1 2 4]);
         end
         % SVD via svdTr
-        [M{it},S,V,dw(it)] = svdTr(T,4,[1 2],Nkeep,Skeep);
+        [M{it},S,V,~] = svdTr(T,4,[1 2],Nkeep,Skeep);
         M{it} = permute(M{it},[1 3 2]);
         % update M{it+1}
         M{it+1} = contract(diag(S),2,2,V,3,1,[1 3 2]);
 
-        % normalize the singular values, to normalize the norm of MPS
-        S = S/norm(S);
-        % compute entanglement entropy of base 2. Be aware of zero
-        % singular values!
-        Spart = -(S.^2).*log(S.^2)/log(2);
-        EE(it) = sum(Spart(~isnan(Spart)));
+
     end
     M{end} = M{end}/norm(M{end}(:)); % to normalize the norm of MPS
 else % right -> left
@@ -221,16 +177,11 @@ else % right -> left
             T = contract(expH{it},4,[3 4],T,4,[2 3],[3 1 2 4]);
         end
         % SVD via svdTr
-        [U,S,M{it+1},dw(it)] = svdTr(T,4,[1 2],Nkeep,Skeep);
+        [U,S,M{it+1},~] = svdTr(T,4,[1 2],Nkeep,Skeep);
         M{it+1} = permute(M{it+1},[1 3 2]);
         % update M{it}
         M{it} = contract(U,3,3,diag(S),2,1,[1 3 2]);
-        % normalize the singular values, to normalize the norm of MPS
-        S = S/norm(S);
-        % compute entanglement entropy of base 2. Be aware of zero
-        % singular values!
-        Spart = -(S.^2).*log(S.^2)/log(2);
-        EE(it) = sum(Spart(~isnan(Spart)));
+
     end
 end
 

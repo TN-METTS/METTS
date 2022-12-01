@@ -71,7 +71,7 @@ M = canonForm(M, 0, [], []); % normalize
 
 % Set exact value 
 % Test function
-[ts, M, ~, EE,dw] = TS_1D(M, H, [], Nkeep, dt, beta/2, true);
+M = TS_1D(M, H, Nkeep, dt, beta/2, false);
 output = exp_val(M, Hs);
 
 

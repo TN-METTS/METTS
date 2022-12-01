@@ -27,8 +27,9 @@ W{3} = rand(3, 3, 5, 5);
 W{4} = rand(3, 3, 5, 1);
 
 Nkeep = 10; 
+Skeep = 1e-8;
 % B ~ WA Get the result from the function  
-[B, C] = zipup_algo(W, A, Nkeep);
+[B, C] = zipup_algo(W, A, Nkeep, Skeep);
 
 % generate expected output 
 B_expected = 1;
