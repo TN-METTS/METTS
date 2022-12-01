@@ -13,8 +13,8 @@ function M = CPS_collapse(M,dim)
 %   ---M{1}---*---M{2}---* ... *---M{end}---
 %       |          |                 |
 %       ^3         ^3                ^3
-% dim : [integer] dimension of local Hilbert space (i.e. the dimension of physical
-% leg)
+% dim : [integer] dimension of local Hilbert space (i.e. the dimension of 3rd leg of the each site)
+%
 % 
 % < Output >
 % M : [1 x N cell array] collapsed matrix product space (to classical
