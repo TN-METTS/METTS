@@ -1,7 +1,7 @@
-function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax)
+function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax, print_log)
 % < Description >
 %
-% [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax)
+% [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax, print_log)
 %
 % < Input >
 % M : [cell] The initial state as the MPS. The length of M, i.e., numel(M),
@@ -52,9 +52,10 @@ function [ts,M,Ovals,EE,dw] = TS_1D(M,Hs,O,Nkeep,dt,tmax)
 % Updated by S.Lee (Jun.07,2019): Revised for SoSe 2019.
 % Updated by S.Lee (Oct.08,2022): Revised for the course at SNU.
 
+if print_log
 
-tobj = tic2;
-
+    tobj = tic2;
+end
 % % % check the integrity of input
 if numel(M) ~= (numel(Hs)+1)
     error('ERR: it should be: numel(M) == (numel(Hs)+1)');
@@ -75,22 +76,30 @@ for itN = (1:numel(Hs))
 end
 % % % 
 % save initial orthonormal state 
-initial_state = M(:); 
+%initial_state = M(:); 
 
 Nstep = ceil(tmax/dt);
 
 % results
 ts = dt*(1:Nstep);
-Ovals = zeros(Nstep,numel(M));
+if ~isempty(O) 
+    if numel(O)==numel(M)
+        Ovals = zeros(Nstep,1);
+    elseif numel(O)==1
+        Ovals = zeros(Nstep, numel(M));
+    end
+end
 EE = zeros(3*Nstep,numel(M)-1);
 dw = zeros(size(EE));
 
 % show information
-fprintf('TS-1D : Imaginary-time evolution with local measurements\n');
-fprintf(['N = ',sprintf('%i',numel(M)),', Nkeep = ',sprintf('%i',Nkeep), ...
-    ', dt = ',sprintf('%.4g',dt),', tmax = ',sprintf('%g',ts(end)), ...
-    ' (',sprintf('%.4g',Nstep),' steps)\n']);
+if print_log
 
+    fprintf('TS-1D : Imaginary-time evolution with local measurements\n');
+    fprintf(['N = ',sprintf('%i',numel(M)),', Nkeep = ',sprintf('%i',Nkeep), ...
+        ', dt = ',sprintf('%.4g',dt),', tmax = ',sprintf('%g',ts(end)), ...
+        ' (',sprintf('%.4g',Nstep),' steps)\n']);
+end
 % generate the unitray operator exp(-it*H) for each two-site pairs
 expH = cell(1,numel(Hs));
 for it1 = (1:numel(Hs))
@@ -108,14 +117,16 @@ for it1 = (1:numel(Hs))
         expH{it1} = reshape(eH,[sdim sdim]);
     end
 end
-
-disptime('Transform the MPS into right-canonical form.');
+if print_log
+    disptime('Transform the MPS into right-canonical form.');
+end
 % since the first sweep is left-to-right, bring the input into
 % right-canonical form, *without* truncation.
 M = canonForm(M,0,[],[]);
 
-disptime('Trotter steps: start');
-
+if print_log
+    disptime('Trotter steps: start');
+end
 for it1 = (1:3*Nstep)
 % Here we use the 2nd order Trotter step exp(-dt/2*Hodd) * exp(-dt*Heven) *
 % exp(-dt/2*Hodd). That is, for the case mod(it1,3) == 2, we act the
@@ -127,26 +138,29 @@ for it1 = (1:3*Nstep)
         expHtmp(1:2:end) = expH(1:2:end);
     end
     
-    % % % % TODO (start) % % % %
     % call local function tDMRG_1sweep which is written below in this file.
     [M,EE(it1,:),dw(it1,:)] = tDMRG_1sweep(M,expHtmp,Nkeep,mod(it1,2));
-    M = normalize(initial_state, M);
     if mod(it1,3) == 0
-        % evaluate local expectation values
-        Ovals(it1/3,:) = exp_val(M,O,mod(it1,2));
-    end
-    % % % % TODO (end) % % % %
-        
-    if (mod(it1,round(3*Nstep/10)) == 0) || (it1 == (3*Nstep))
-        disptime(['#',sprintf('%i/%i',[it1/3,Nstep]), ...
-            ' : t = ',sprintf('%g/%g',[ts(it1/3),ts(end)])]);
+        if ~isempty(O)
+            % evaluate expectation values
+            Ovals(it1/3,:) = exp_val(M,O,mod(it1,2));
+        end
+
     end
 
+    M = normalize(M);
+    if print_log 
+        if (mod(it1,round(3*Nstep/10)) == 0) || (it1 == (3*Nstep))
+            disptime(['#',sprintf('%i/%i',[it1/3,Nstep]), ...
+                ' : t = ',sprintf('%g/%g',[ts(it1/3),ts(end)])]);
+        end
+    end
 end
 
-toc2(tobj,'-v');
-chkmem;
-
+if print_log
+    toc2(tobj,'-v');
+    chkmem;
+end
 end
 
 function [M,EE,dw] = tDMRG_1sweep (M,expH,Nkeep,isright)
@@ -223,10 +237,10 @@ end
 end
 
 
-function M = normalize(initial_state, M)
+function M = normalize(M)
     N = numel(M); 
     for itN=(1:N)
-        P = contract(M{itN}, 3, [1 2 3], conj(initial_state{itN}), 3,[1 2 3]);
+        P = contract(M{itN}, 3, [1 2 3], conj(M{itN}), 3,[1 2 3]);
         M{itN} = M{itN}./sqrt(P);
     end 
 end 
