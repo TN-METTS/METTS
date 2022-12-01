@@ -1,19 +1,30 @@
 function M = CPS_collapse(M,dim)
+% <Description>
+%
 % M = CPS_collapse(M,dim) 
 %
 % Obtain CPS by collapsing METTS
 % 
 %
 %
-% Input :
+% < Input >
 % M : [1 x N cell array] Matrix product state to collapse 
-% dim : [integer] dimension of local Hilbert space (i.e. the dimension of physical
-% leg)
-% 
+%    1      2   1      2         1        2
+%   ---M{1}---*---M{2}---* ... *---M{end}---
+%       |          |                 |
+%       ^3         ^3                ^3
+% dim : [integer] dimension of local Hilbert space (i.e. the dimension of 3rd leg of the each site)
 %
+% 
+% < Output >
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
 %
+%
+% Written by HM.Kim (Dec.01,2022) 
+%
+
+
 tobj = tic2;
 
 
