@@ -88,6 +88,8 @@ if ~isempty(O)
     elseif numel(O)==1
         Ovals = zeros(Nstep, numel(M));
     end
+else 
+    Ovals = [];
 end
 EE = zeros(3*Nstep,numel(M)-1);
 dw = zeros(size(EE));
@@ -190,7 +192,6 @@ EE = zeros(1,N-1);
 dw = zeros(1,N-1);
 Skeep = 1e-8;
 
-% % % % TODO (start) % % % %
 if isright % left -> right
     for it = (1:N-1)
         % contract M{it} and M{it+1} with expH{it}
@@ -201,14 +202,15 @@ if isright % left -> right
         % SVD via svdTr
         [M{it},S,V,dw(it)] = svdTr(T,4,[1 2],Nkeep,Skeep);
         M{it} = permute(M{it},[1 3 2]);
+        % update M{it+1}
+        M{it+1} = contract(diag(S),2,2,V,3,1,[1 3 2]);
+
         % normalize the singular values, to normalize the norm of MPS
         S = S/norm(S);
-        % compiute entanglement entropy of base 2. Be aware of zero
+        % compute entanglement entropy of base 2. Be aware of zero
         % singular values!
         Spart = -(S.^2).*log(S.^2)/log(2);
         EE(it) = sum(Spart(~isnan(Spart)));
-        % update M{it+1}
-        M{it+1} = contract(diag(S),2,2,V,3,1,[1 3 2]);
     end
     M{end} = M{end}/norm(M{end}(:)); % to normalize the norm of MPS
 else % right -> left
@@ -221,28 +223,31 @@ else % right -> left
         % SVD via svdTr
         [U,S,M{it+1},dw(it)] = svdTr(T,4,[1 2],Nkeep,Skeep);
         M{it+1} = permute(M{it+1},[1 3 2]);
+        % update M{it}
+        M{it} = contract(U,3,3,diag(S),2,1,[1 3 2]);
         % normalize the singular values, to normalize the norm of MPS
         S = S/norm(S);
-        % compiute entanglement entropy of base 2. Be aware of zero
+        % compute entanglement entropy of base 2. Be aware of zero
         % singular values!
         Spart = -(S.^2).*log(S.^2)/log(2);
         EE(it) = sum(Spart(~isnan(Spart)));
-        % update M{it}
-        M{it} = contract(U,3,3,diag(S),2,1,[1 3 2]);
     end
-    % M{1} = M{1}/norm(M{1}(:)); % to normalize the norm of MPS
 end
-% % % % TODO (end) % % % %
 
 end
 
 
 function M = normalize(M)
     N = numel(M); 
+    MM = 1;
     for itN=(1:N)
-        P = contract(M{itN}, 3, [1 2 3], conj(M{itN}), 3,[1 2 3]);
-        M{itN} = M{itN}./sqrt(P);
+        T1 = contract(MM,3,3,M{itN},3,1); 
+        MM = contract(conj(M{itN}),3,[1,3],T1,4,[1,4]);
     end 
+    for itN=(1:N)
+
+        M{itN} = M{itN}./sqrt(MM);
+    end
 end 
 
 
