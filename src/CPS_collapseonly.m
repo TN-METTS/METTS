@@ -7,8 +7,14 @@ function M = CPS_collapseonly(M,dim,s)
 % 
 %
 %
-% Input :
+% < Input >
 % M : [1 x N cell array] Matrix product state to collapse 
+%
+%    1      2   1      2         1        2
+%   ---M{1}---*---M{2}---* ... *---M{end}---
+%       |          |                 |
+%       ^3         ^3                ^3
+% 
 % dim : [integer] dimension of local Hilbert space (i.e. the dimension of physical
 % leg)
 % s : [integer] s = 1 -> only collapse to S_x eigenstates; s = 2 -> S_y; s
@@ -18,6 +24,7 @@ function M = CPS_collapseonly(M,dim,s)
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
 %
+
 tobj = tic2;
 
 
