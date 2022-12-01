@@ -195,10 +195,8 @@ function M = normalize(M)
         T1 = contract(MM,3,3,M{itN},3,1); 
         MM = contract(conj(M{itN}),3,[1,3],T1,4,[1,4]);
     end 
-    for itN=(1:N)
-
-        M{itN} = M{itN}./sqrt(MM);
-    end
+    M{N} = M{N}./sqrt(MM);
+    
 end 
 
 
