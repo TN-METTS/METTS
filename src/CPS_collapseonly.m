@@ -19,6 +19,7 @@ function M = CPS_collapseonly(M,dim,s,print_log)
 % leg)
 % s : [integer] s = 1 -> only collapse to S_x eigenstates; s = 2 -> S_y; s
 % = 3 -> S_z
+% print_log [boolean] : whether print time, used memory or not
 % 
 % Output :
 % M : [1 x N cell array] collapsed matrix product space (to classical
@@ -77,8 +78,6 @@ for it = (1:N-1)
     S = contract(diag(S),2,2,Vd,2,1);
     M{it+1} = contract(S,2,2,M{it+1},3,1);
 end
-
-disptime(['Collapsed along the',axis,'axis']);
 
 if print_log
     disptime(['Collapsed along the',axis,'axis']);

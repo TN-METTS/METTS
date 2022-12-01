@@ -15,7 +15,7 @@ function M = CPS_collapse(M,dim,print_log)
 %
 % dim : [integer] dimension of local Hilbert space (i.e. the dimension of physical
 % leg)
-% print_log [logical]  
+% print_log [boolean] : whether print time, used memory or not
 %
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
