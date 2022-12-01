@@ -10,7 +10,7 @@ function [ts,M,Ovals,EE,dw] = tDMRG (M,Hs,O,Nkeep,dt,tmax)
 % evolution operator for time step dt is decomposed into exp(-dt/2*Hodd) * 
 % exp(-dt*Heven) * exp(-dt/2*Hodd). Those exponential terms in the
 % decomposition are applied bond by bond; after acting an exponential term,
-% the corresponding bond is truncated via SVD.
+% the corresponding bond is truncated via SVDe3.
 % This function also computes the expectation value of the local operator O
 % is evaluated for every site and every time instances. 
 %
