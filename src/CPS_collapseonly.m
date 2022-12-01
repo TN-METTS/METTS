@@ -57,9 +57,8 @@ for it = (1:dim)
 end
 
 
-[M,~,~] = canonForm(M,N,[],0);
-[M,~,~] = canonForm(M,1,[],0); % site-canonical form with orthogonality center site 1
-
+[M,S,~] = canonForm(M,1,[],0); % site-canonical form with orthogonality center site 1
+M{it1} = contract(M,3,2,diag(S),2,1,[1 3 2]);
 
 
 for it = (1:N-1)
