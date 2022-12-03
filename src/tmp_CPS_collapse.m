@@ -39,9 +39,9 @@ C = cell(1,dim); % set for pure state projector
 
 % generate pure state projector
 for it = (1:dim)
-    null = zeros(dim, dim);
-    null(:,it) = V(:,it); % project 
-    C{it} = null;
+    projector = zeros(dim, dim);
+    projector(:,it) = V(:,it); % project 
+    C{it} = projector;
 end
 
 prob = zeros(1,dim); % probability for each pure state
