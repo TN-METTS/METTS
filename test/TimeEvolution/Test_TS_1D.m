@@ -12,8 +12,8 @@ function equality = Test_TS_1D()
 % system parameter
 
 J = 1; % coupling strength
-L = 5; % number of sites in a chain
-T = 0.01; 
+L = 4; % number of sites in a chain
+T = 0.05; 
 
 % Imaginary time evolution parameters
 Nkeep = 30; % bond dimension

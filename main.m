@@ -1,9 +1,10 @@
 clear
+
 % system parameter
 J = 1; % coupling strength
-L = 4; % number of sites in a chain
-T = 0.05; % temperature
-SN =50; % sampling number
+N = 100; % number of sites in a chain
+T = 0.5; % temperature
+SN = 10; % sampling number
 
 %log
 print_log = false;
@@ -15,10 +16,13 @@ dt = 1/20; % discrete time step size
 
 % Local operators
 [S,I] = getLocalSpace('Spin',1);
+basis = zeros(size(I, 1), size(I, 2),3);
+basis( :, :, 1)= [exp(2*pi/3*1i), -1, -exp(-2*pi/3*1i); 1, -1, -1; exp(-2*pi/3*1i), -1, -exp(2*pi/3*1i)]/sqrt(3);
+[basis(:, :, 2), ~] = eig(S(:,:,2)); %basis of Sz 
 
 %Set gates
 % nearest-neighbor interaction terms
-H = cell(1,L-1);
+H = cell(1, N-1);
 H(:) = {J*contract(S,3,3,permute(conj(S),[2 1 3]),3,3)};
 %       2      4      [legs 1 and 2 are for site n;
 %       |      |       legs 3 and 4 are for site n+1]
@@ -26,7 +30,10 @@ H(:) = {J*contract(S,3,3,permute(conj(S),[2 1 3]),3,3)};
 %       |      |
 %       1      3
 
-% full chain
+
+% generate operators to get expectation value
+Nsweep = 3; 
+% Set H as MPO
 Hloc = cell(5,5);
 Hloc(:) = {zeros(size(I))};
 Hloc{1,1} = I;
@@ -39,40 +46,73 @@ Hloc{5,4} = J*S(:,:,3)';
 Hloc{end,end} = I;
 Hloc = cell2mat(reshape(Hloc,[1 1 size(Hloc,1) size(Hloc,2)]));
 
-Hs = cell(1,L);
-Hs(:) = {Hloc};
-Hs{1} = Hs{1}(:,:,end,:); % choose the last components of the left leg
-Hs{end} = Hs{end}(:,:,:,1); % choose the first components of the right leg
-%       |2            [legs 1 and 2 are for site n;
-%    3  |    4         legs 3 and 4 are for site n+1]
-% ----- Hs{n}-----
-%       |      
-%       |1      
+H_MPO = cell(1,N);
+H_MPO(:) = {Hloc};
+H_MPO{1} = H_MPO{1}(:,:,end,:); % choose the last components of the left leg
+H_MPO{end} = H_MPO{end}(:,:,:,1); % choose the first components of the right leg
 
-% Initialize state 
+H_MPO = MPO_canonForm(H_MPO, 0, [], 1e-8);
+H2_MPO = mtimes_MPO (H_MPO, H_MPO, Nkeep,Nsweep);
+%[H2_MPO, norm]= zipup_algo(H_MPO, H_MPO, Nkeep, Nsweep, Skeep);
 
-M = cell(1,L);
-for itN = (1:L)
-    if itN <= (L/2)
-        M{itN} = permute(rand(1, 3),[1 3 2]);
-    else
-        M{itN} = permute(rand(1, 3),[1 3 2]);
-    end
+fprintf("For N=%d, spin=%d, beta=%1.3f, dt=%0.4f, Heisenberg chain, calculation started\n", N, 1, beta, dt);
+
+%       |2                   |2          
+%    3  |    4            3  |    4       
+% ----H_MPO{n}-----   ----H2_MPO{n}-----
+%       |                    |      
+%       |1                   |1   
+
+Sz = S(:,:,2);
+Szloc=cell(2, 2);
+Szloc{1,1}=I;
+Szloc{1, 2}=zeros(size(I));
+Szloc{2, 1}=Sz;
+Szloc{2, 2} = I; 
+Szloc = cell2mat(reshape(Szloc, [1, 1, size(Szloc, 1), size(Szloc, 2)]));
+Sz_MPO = cell(1, N);
+Sz_MPO(:) = {Szloc};
+Sz_MPO{1} = Sz_MPO{1}(:,:,end,:); % choose the last components of the left leg
+Sz_MPO{end} = Sz_MPO{end}(:,:,:,1); % choose the first components of the right leg
+Sz_MPO = MPO_canonForm(Sz_MPO, 0, [], 1e-8);
+Sz2_MPO = mtimes_MPO (Sz_MPO, Sz_MPO, Nkeep,Nsweep);
+
+
+% Initialize state with random number
+M = cell(1,N);
+for itN = (1:N)
+    M{itN} = permute(rand(1, 3),[1 3 2]);
 end
 
-M = CPS_collapse(M, size(M{1}, 3));
+%normalize
+M = canonForm(M, 0, [], []);
 
-% operator to measure magnetization
-Sz = S(:,:,2);
-operator = Hs;
-E = zeros(1, SN);
-% TS_1D
+% Use CPS_collapse to generate orthonormal basis 
+M = tmp_CPS_collapse(M, basis( :, :,2),  print_log);
+
+% result
+mag = zeros(SN,1);
+mag2 = zeros(SN,1);
+E = zeros(SN, 1);
+E2 = zeros(SN, 1);
+
+% time evolution with TS_1D
 for itS=(1:SN)
-    [ts,M,Ovals,EE,dw] = TS_1D(M, H, [], Nkeep, dt, beta/2, print_log);
-    E(itS) = exp_val(M, operator);
-    M = CPS_collapse(M, size(M{1}, 3));%,print_log);
+    [M, isright] = TS_1D(M, H, Nkeep, dt, beta/2, print_log);
+    mag(itS) = exp_val(M, Sz_MPO);
+    mag2(itS) = exp_val(M, Sz2_MPO);
+%     mag(itS) = sum(exp_val(M, S_tot, ~isright), 'all');
+%     mag2(itS) =sum(exp_val(M, S2_tot, ~isright), 'all');
+%     mag(itS) = sum(exp_val(M, {Sz}, ~isright),'all');
+%     mag2(itS) =sum( exp_val(M, {Sz*Sz}, ~isright), 'all');  
+    E(itS) = exp_val(M, H_MPO);
+    E2(itS) = exp_val(M, H2_MPO);
+    %M = CPS_collapse(M, size(M{1}, 3), print_log);
+    M = tmp_CPS_collapse(M, basis( :, :,mod(itS+1, 2)+1), print_log);
 end 
-mean(E)
+
+chi = (mean(mag2)-mean(mag)^2)./(N*T)
+specific_heat = (mean(E2)-mean(E)^2)./(N*T^2)
 
 
 
