@@ -111,7 +111,7 @@ for it1 = (1:3*Nstep)
     end
     
     % call local function tDMRG_1sweep which is written below in this file.
-    [M] = tDMRG_1sweep(M,expHtmp,Nkeep,mod(it1,2));
+    [M] = sweep(M,expHtmp,Nkeep,mod(it1,2));
     
 
     M = normalize(M);
@@ -130,7 +130,7 @@ end
 
 end
 
-function M = tDMRG_1sweep (M,expH,Nkeep,isright)
+function M = sweep (M,expH,Nkeep,isright)
 % Apply exp(-it*Heven/odd), which is a row of two-site gates acting on
 % either even or odd bonds, and then truncate bonds by using SVD. After
 % applying this function, left-canonical state becomes right-canonical, and

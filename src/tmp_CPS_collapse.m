@@ -3,7 +3,6 @@ function M = tmp_CPS_collapse(M, V, print_log)
 % CPS = CPS_collapse(M, isodd, print_log) 
 %
 % Obtain CPS by collapsing METTS; collapsed state is determined at each site randomly
-% 
 %
 %
 % Input :
@@ -19,7 +18,7 @@ function M = tmp_CPS_collapse(M, V, print_log)
 %
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
-%
+% Written by M.Kim (Dec.03,2022)
 if print_log
     tobj = tic2;
 end
