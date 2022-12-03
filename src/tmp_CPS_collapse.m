@@ -1,4 +1,5 @@
-function M = tmp_CPS_collapse(M, isodd, print_log)
+
+function M = tmp_CPS_collapse(M, V, print_log)
 % CPS = CPS_collapse(M, isodd, print_log) 
 %
 % Obtain CPS by collapsing METTS; collapsed state is determined at each site randomly
@@ -12,8 +13,7 @@ function M = tmp_CPS_collapse(M, isodd, print_log)
 %   ---M{1}---*---M{2}---* ... *---M{end}---
 %       |          |                 |
 %       ^3         ^3                ^3
-% isodd: [boolean] : if 1, collapse to Sx eigenstates, if 0, collapse to Sz
-% eigenstates.
+% V: [local dim X local dim] : new basis to collapse 
 % 
 % print_log [boolean] : whether print time, used memory or not
 %
@@ -24,24 +24,22 @@ if print_log
     tobj = tic2;
 end
 
-[S,~] = getLocalSpace('Spin',1);
-
-if isodd
-    S = (S(:,:,1) + S(:,:,3))/sqrt(2);
-else 
-    S = S(:,:,2);
-end 
-
-[V,~] = eig(S);
+    
 N = numel(M); % the number of sites
+
+% % convert basis 
+% for it=(1:N)
+%     M{it} = contract(M{it}, 3, 3, V, 2, 1);
+% end 
+
 dim = size(M{1}, 3); % dimension of local Hilbert space 
 C = cell(1,dim); % set for pure state projector
 
 % generate pure state projector
 for it = (1:dim)
-    projector = zeros(dim, dim);
-    projector(:,it) = V(:,it); % project 
-    C{it} = projector;
+    Projector = zeros(1,dim);
+    Projector(1,it) = 1;
+    C{it} = V'*diag(Projector)*V;
 end
 
 prob = zeros(1,dim); % probability for each pure state
@@ -55,6 +53,9 @@ for it = (1:N)
         Tmp = contract(M{it}, 3, 3, C{it2}, 2, 2);
         prob(it2) = contract(Tmp, 3, (1:3), conj(M{it}), 3,(1:3));
     end
+
+%     fprintf("At site %d| prob %0.4f, %0.4f, %0.4f, sum = %0.4f, norm = %0.4f\n", it, prob(1),prob(2),prob(3), sum(prob), contract(M{it}, 3, (1:3), conj(M{it}), 3,(1:3)));
+    
     prob = prob./sum(prob, 'all'); %sum(prob, 'all') is 1 but divide with it to remove noise. 
     
     % choose 1 state with projected probability
@@ -83,6 +84,10 @@ for it = (1:N)
     % CPS noise ? 
 end
 
+% % restore basis 
+% for it=(1:N)
+%     M{it} = contract(M{it}, 3, 3, V, 2, 1);
+% end
 
 if print_log
     toc2(tobj,'-v');
