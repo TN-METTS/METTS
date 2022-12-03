@@ -5,7 +5,7 @@ MaxCoreNum= 32; % this should be revised for the computer executed
 
 N = 50; % number of sites in a chain
 beta = 1; 
-SN =5; % sampling number
+SN =500; % sampling number
 
 %log
 print_log = false;
@@ -132,9 +132,10 @@ chkmem;
 save(sprintf('../result/z_only_SN=%d.mat', SN), 'z_only')
 save(sprintf('../result/max_mixed_SN=%d.mat', SN), 'max_mixed')
 save(sprintf('../result/random_SN=%d.mat', SN), 'random')
+savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
 function rand_basis=basis_random_axis(S)
     dim =size(S, 3);
-    axis = randn( dim, 1);
+    axis = rand( dim, 1);
     axis = axis./norm(axis(:));
     mat = contract(S, 3, 3, axis, 2, 1);
     [rand_basis, ~] = eig((mat+mat')/2);
