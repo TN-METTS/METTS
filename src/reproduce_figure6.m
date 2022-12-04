@@ -131,6 +131,8 @@ save(sprintf('../result/z_only_SN=%d.mat', SN), 'z_only')
 save(sprintf('../result/max_mixed_SN=%d.mat', SN), 'max_mixed')
 save(sprintf('../result/random_SN=%d.mat', SN), 'random')
 savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
+disptime("Save succeed");
+
 function rand_basis=basis_random_axis(S)
     dim =size(S, 3);
     axis = rand( dim, 1);
