@@ -26,10 +26,6 @@ end
     
 N = numel(M); % the number of sites
 
-% % convert basis 
-% for it=(1:N)
-%     M{it} = contract(M{it}, 3, 3, V, 2, 1);
-% end 
 
 dim = size(M{1}, 3); % dimension of local Hilbert space 
 C = cell(1,dim); % set for pure state projector
@@ -82,11 +78,6 @@ for it = (1:N)
     end    
     % CPS noise ? 
 end
-
-% % restore basis 
-% for it=(1:N)
-%     M{it} = contract(M{it}, 3, 3, V, 2, 1);
-% end
 
 if print_log
     toc2(tobj,'-v');

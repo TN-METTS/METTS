@@ -59,6 +59,7 @@ Ms=cell(1,SN);
 % case 1 
 z_only = zeros(SN, Step_num);
 for itS=(1:SN)
+    % save initial M for case 2 and case 3 
     M = cell(1,N);
     for itN = (1:N)
         M{itN} = permute(rand(1, 3),[1 3 2]);
@@ -83,12 +84,6 @@ disptime('z only ended')
 % case 2 
 random = zeros(SN, Step_num);
 for itS=(1:SN)
-%     M = cell(1,N);
-%     for itN = (1:N)
-%         M{itN} = permute(rand(1, 3),[1 3 2]);
-%     end
-    %normalize
-%     M = canonForm(M, 0, [], []);
     M=Ms{itS};
     for step= (1:Step_num)
         % Use CPS_collapse to generate orthonormal basis 
@@ -104,16 +99,7 @@ disptime('random ended')
 % case 3 
 max_mixed = zeros(SN, Step_num);
 for itS=(1:SN)
-%     M = cell(1,N);
-%     for itN = (1:N)
-%         M{itN} = permute(rand(1, 3),[1 3 2]);
-%     end
-    %normalize
-%     M = canonForm(M, 0, [], []);
     M=Ms{itS};
-
-%     rand_basis=basis_random_axis(S);
-%     M = tmp_CPS_collapse(M, rand_basis,  print_log);
     for step= (1:Step_num)
         % Use CPS_collapse to generate orthonormal basis 
         [M, isright] = TS_1D(M, H, Nkeep, dt, beta/2, print_log);
