@@ -66,7 +66,7 @@ for T=Ts
         mag2_m(itS) = sum(m' * m, 'all');
     
         [M, ~] = TS_1D(M, H, Nkeep, dt, beta/2, print_log);
-        [M, idxes] = tmp_CPS_collapse(M, basis( :, :, 2), print_log);
+        [M, idxes] = CPS_collapse(M, basis( :, :, 2), print_log); % z-projection
         m = D(idxes)';
         mag_z(itS) = sum(m, 'all');
         mag2_z(itS) = sum(m' * m, 'all');

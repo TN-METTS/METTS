@@ -5,8 +5,10 @@
 J = 1; % coupling strength
 N = 100; % number of sites in a chain
 %T = 0.5; % temperature
-Ts = [0.5, 0.4, 0.3, 0.2, 0.1];
-SN = 100; % sampling number
+%Ts = [0.5, 0.4, 0.3, 0.2, 0.1];
+Ts = [0.4, 0.3, 0.2, 0.1];
+
+SN = 10; % sampling number
 step_num = 6; 
 %log
 print_log = false;
@@ -105,30 +107,31 @@ for test = (1:5)
         if mod(itS, 5)==0
             [Cv, Cv_error] =  cal_specific_heat(E(1:itS, :), E2(1:itS, :), N, T);
             
-            fprintf('T = %0.3f, specific heat = %0.4f\n', T,  Cv(end));
-            fprintf('specific heat in [%0.4f, %0.4f]\n',Cv(end)-Cv_error(end), Cv(end)+Cv_error(end));
+            disptime(sprintf('T = %0.3f, specific heat = %0.4f in [%0.4f, %0.4f]', T,  Cv(end), Cv(end)-Cv_error(end), Cv(end)+Cv_error(end)));
             disptime(sprintf('Iteration %d ended', itS));
+            save(sprintf('../result/specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep), 'E', 'E2')
+    
         end 
     end 
 
     [Cv, Cv_error] =  cal_specific_heat(E(1:end, :), E2(1:end, :), N, T);
     
     fprintf('T = %0.3f, specific heat = %0.4f\n', T,  Cv(end));
-    fprintf('specific heat in [%0.4f, %0.4f]\n',Cv(end)-Cv_error(end), Cv(end)+Cv_error(end));
+    fprintf('specific heat in [%0.4f, %0.4f]\n', Cv(end)-Cv_error(end), Cv(end)+Cv_error(end));
     
     
     toc2(tobj,'-v');
     chkmem;
     save(sprintf('../result/specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep), 'E', 'E2')
+    
     disptime('Save succeed')
-    break; 
 end 
 
 function [Cv, Cv_error] = cal_specific_heat(E, E2, N, T)
     SN = size(E, 1);
-    Cv = (mean(E2, 1)-mean(E, 1).^2);
-    Cv_error = Cv.^2.*sqrt(2/(SN-1))./(N*T^2);%(std(E2, 1)-std(E,1).^2)./(N*T^2)./sqrt(SN-1);
-    Cv = Cv./(N*T^2);
+    Cv = (mean(E2, 1)-mean(E, 1).^2)./N;
+    Cv_error = Cv.^2.*sqrt(2/(SN-1))./T^2;%(std(E2, 1)-std(E,1).^2)./(N*T^2)./sqrt(SN-1);
+    Cv = Cv./(T^2);
     
     
 end 
