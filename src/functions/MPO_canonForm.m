@@ -11,7 +11,7 @@ function [W, lognorm] = MPO_canonForm(W,id, Nkeep, Skeep)
 % < Output >
 % W: [1 X L cell array] MPO
 %    leg order: bottom-top-left-right
-%
+% lognorm[numeric] : log norm of MPO
 % Written by M.Kim (Dec.01,2022)
 % Revised by M.Kim (Dec.01,2022); add truncation
     N = numel(W);
