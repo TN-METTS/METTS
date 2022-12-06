@@ -1,11 +1,12 @@
 
-function M = tmp_CPS_collapse(M, V, print_log)
+function [M, idxes] = tmp_CPS_collapse(M, V, print_log)
 % CPS = CPS_collapse(M, isodd, print_log) 
 %
 % Obtain CPS by collapsing METTS; collapsed state is determined at each site randomly
 %
 %
-% Input :
+% <Input> 
+%
 % M : [1 x N cell array] Matrix product state to collapse 
 %
 %    1      2   1      2         1        2
@@ -16,9 +17,12 @@ function M = tmp_CPS_collapse(M, V, print_log)
 % 
 % print_log [boolean] : whether print time, used memory or not
 %
+% <Output>
+% 
 % M : [1 x N cell array] collapsed matrix product space (to classical
 % product space)
 % Written by M.Kim (Dec.03,2022)
+
 if print_log
     tobj = tic2;
 end
@@ -38,7 +42,7 @@ for it = (1:dim)
 end
 
 prob = zeros(1,dim); % probability for each pure state
-
+idxes = zeros(1, N);
 [M,s,~] = canonForm(M,1,[],0); % site-canonical form with orthogonality center site 1
 M{1} = contract(M{1}, 3, 2, diag(s), 2, 1, [1 3 2]);
 
@@ -61,6 +65,7 @@ for it = (1:N)
     for it2=(1:dim)
         if rn<=probC(it2)
             idx = it2; 
+            idxes(it) = idx;
             break; 
         end 
     end 

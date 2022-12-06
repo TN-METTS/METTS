@@ -50,7 +50,7 @@ H_MPO(:) = {Hloc};
 H_MPO{1} = H_MPO{1}(:,:,end,:); % choose the last components of the left leg
 H_MPO{end} = H_MPO{end}(:,:,:,1); % choose the first components of the right leg
 
-H_MPO = MPO_canonForm(H_MPO, 0, [], 1e-8);
+[H_MPO, lognorm_H_MPO] = MPO_canonForm(H_MPO, 0, [], 1e-8);
 fprintf("For N=%d, spin=%d, beta=%1.3f, dt=%0.4f, Heisenberg chain, calculation started\n", N, 1, beta, dt);
 
 Step_num = 10; 
@@ -77,7 +77,7 @@ for itS=(1:SN)
 
     end 
 end 
-z_only = z_only./N;
+z_only = z_only./N.*exp(lognorm_H_MPO);
 z_only_std= std(z_only, 0, 1);
 disptime('z only ended')
 
@@ -93,7 +93,7 @@ for itS=(1:SN)
         M = tmp_CPS_collapse(M, rand_basis,  print_log);
     end 
 end 
-random = real(random)./N;
+random = real(random)./N.*exp(lognorm_H_MPO);
 random_std= std(random, 0, 1);
 disptime('random ended')
 % case 3 
@@ -108,7 +108,7 @@ for itS=(1:SN)
 
     end 
 end 
-max_mixed = real(max_mixed)./N;
+max_mixed = real(max_mixed)./N.*exp(lognorm_H_MPO);
 max_mixed_std= std(max_mixed, 0, 1);
 disptime('maximaly mixed ended')
 
@@ -127,11 +127,9 @@ ylabel('Energy per Site');
 
 toc2(tobj,'-v');
 chkmem;
-save(sprintf('../result/z_only_SN=%d.mat', SN), 'z_only')
-save(sprintf('../result/max_mixed_SN=%d.mat', SN), 'max_mixed')
-save(sprintf('../result/random_SN=%d.mat', SN), 'random')
+save(sprintf('../result/E_measurement_SN=%d.mat', SN), 'z_only', 'max_mixed', 'random')
 savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
-disptime("Save succeed");
+disptime('Save succeed');
 
 function rand_basis=basis_random_axis(S)
     dim =size(S, 3);

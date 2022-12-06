@@ -20,6 +20,7 @@ N = numel(M);
 if numel(operator)==N % operator in MPO form 
     MM = 1; 
     vals=1;
+
     for itN = (1:N)
         T2 = contract(vals,3,3,M{itN},3,1); %L1 L2 MR MD
         T1 = contract(MM,3,3,M{itN},3,1); %L1 L2 MR MD
@@ -49,8 +50,6 @@ elseif numel(operator) == 1
             MM = updateLeft(MM,2,M{itN},[],[],M{itN});
         end 
     end
-    % Note that if M is converged, vals should be same 
-    
 end 
 
 end

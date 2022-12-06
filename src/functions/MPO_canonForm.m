@@ -1,4 +1,4 @@
-function W = MPO_canonForm(W,id, Nkeep, Skeep)
+function [W, lognorm] = MPO_canonForm(W,id, Nkeep, Skeep)
 % Make canonical form of MPO using MPS canonForm function 
 % 
 % 
@@ -24,11 +24,12 @@ function W = MPO_canonForm(W,id, Nkeep, Skeep)
     
     % Use canonForm for MPS
     [W, norm_] = canonForm(W, id, Nkeep,Skeep);% No truncation 
-    if id==0
-        W{1} = W{1}.*norm_;
-    else
-        W{id} = W{id}.*norm_;
-    end 
+    lognorm = log(norm_);
+%     if id==0
+%         W{1} = W{1}.*norm_;
+%     else
+%         W{id} = W{id}.*norm_;
+%     end 
     
     % Bring back to rank-4
     for itN = (1:N)

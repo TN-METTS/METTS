@@ -36,7 +36,7 @@ end
 % Bring W into right-canonical form
 % To make W as canonical form, merge physical legs and use canonForm
 % function. 
-W = MPO_canonForm(W, 0);
+W = MPO_canonForm(W, 0, Nkeep, Skeep);
 
 if numel(size(A{2}))==3 % A is MPS form  
     % Bring A into right-canonical form 
@@ -46,7 +46,7 @@ if numel(size(A{2}))==3 % A is MPS form
     [B, C] =zipup_MPS(W, A, 2*Nkeep, Skeep);
 
 elseif numel(size(A{2}))==4 % A is MPO form 
-    A = MPO_canonForm(A, 0);
+    A = MPO_canonForm(A, 0,Nkeep, Skeep);
 %     loc = cell(1,N); % isometries for merging the bottom and top legs of MPO tensors
 %     for itN = (1:N)
 %         loc{itN} = getIdentity(A{itN},1,A{itN},2);
@@ -71,10 +71,16 @@ function [B, C] =zipup_MPS(W, A, Nkeep, Skeep)
     for itN=(1:N)
         CWA = contract(C, 3, 3, A{itN}, 3, 1); % CD CWR AR AP
         CWA = contract(CWA, 4, [2, 4], W{itN}, 4, [3 2] , [1 3 4 2]); % CD, WD, WR, AR
-        [U, s, Vd] = svdTr(CWA, 4, [1 2], Nkeep, Skeep);
-        B{itN} = permute(U, [1 3 2]); % C1, D, WD
-        C = contract(diag(s), 2, 2, Vd, 3, 1); % D, WR, AR
+        if itN<N
+            [U, s, Vd] = svdTr(CWA, 4, [1 2], [],[]);%Nkeep, Skeep);
+            B{itN} = permute(U, [1 3 2]); % CD, D, WD
+            C = contract(diag(s), 2, 2, Vd, 3, 1); % D, WR, AR
+        else 
+            B{itN} = permute(CWA, [1 3 2]);
+        end 
+        
     end 
+%     B{end} = contract(B{end}, 3, 2, C, 2, 1, [1 3 2]); % CD WD WR  
     % For the last iteration, C is just number due to the dummy index 
 end 
 
