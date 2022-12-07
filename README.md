@@ -18,6 +18,10 @@ For example,
 ```
 PATH = 'C:/Users/User/Documents/MATLAB/FinalProject/result/';
 ```
+Also, execute startup.m file to add functions in searchspace. 
+```
+startup.m
+```
 
 ### Calculation and Visualization
 To calculate specific heat and susceptibility using METTS, set boolean variable named "isSaved" in main.m as "false".   
