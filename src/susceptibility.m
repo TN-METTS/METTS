@@ -4,7 +4,7 @@ J = 1; % coupling strength
 N = 100; % number of sites in a chain
 Ts = [0.5, 0.4, 0.3, 0.2, 0.1];
 SNs = [2, 2, 2, 2, 2]; % sampling number
-steps=[50, 50, 40, 30, 20];
+steps=[50, 50, 30, 30, 20];
 %step_num = 50; 
 
 %log
