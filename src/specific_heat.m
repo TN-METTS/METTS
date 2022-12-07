@@ -1,28 +1,28 @@
-% system parameter
+% This script calculates specific heat and susceptibility using imaginary time evolution 
 
 %MaxCoreNum= 32; % this should be revised for the computer executed 
 
 J = 1; % coupling strength
 N = 100; % number of sites in a chain
-%T = 0.5; % temperature
-%Ts = [0.5, 0.4, 0.3, 0.2, 0.1];
-Ts = [0.4, 0.3, 0.2, 0.1];
-
-SN = 10; % sampling number
+Ts = [0.5, 0.4, 0.3, 0.2, 0.1];
+SNs = [40,30,30,30,20]; % sampling number
 step_num = 6; 
+
 %log
 print_log = false;
 
 % Imaginary time evolution parameters
-Nkeeps = [40, 40, 50, 60, 60]; % bond dimension
+Nkeeps = [40, 40, 40, 50, 60];% bond dimension
 Skeep = 1e-10;
-dt = 1/25; % discrete time step size
+dts=[1/25, 1/25, 1/20, 1/20, 1/15];
 
 % Local operators
 [S,I] = getLocalSpace('Spin',1);
 basis = zeros(size(I, 1), size(I, 2),3);
+% Maximally mixed states 
 basis( :, :, 1)= [exp(2*pi/3*1i), 1,  exp(-2*pi/3*1i); -1, -1,-1; -exp(-2*pi/3*1i), -1, -exp(2*pi/3*1i)]/sqrt(3);
-[basis(:, :, 2), ~] = eig(S(:,:,2)); %basis of Sz 
+[basis(:, :, 2), D] = eig(S(:,:,2)); %basis of Sz 
+D = diag(D);
 
 %Set gates
 % nearest-neighbor interaction terms
@@ -56,10 +56,7 @@ H_MPO{1} = H_MPO{1}(:,:,end,:); % choose the last components of the left leg
 H_MPO{end} = H_MPO{end}(:,:,:,1); % choose the first components of the right leg
 
 [H_MPO, lognorm_H_MPO] = MPO_canonForm(H_MPO, 0, [], Skeep);
-%H_MPO{1} = H_MPO{1}.*exp(lognorm_H_MPO);
-H2_MPO = mtimes_MPO (H_MPO, H_MPO, 25, Nsweep);
-%[H2_MPO, norm]= zipup_algo(H_MPO, H_MPO, Nkeep, Nsweep, Skeep);
-
+H2_MPO = mtimes_MPO (H_MPO, H_MPO, 40, Nsweep);
 
 %       |2                   |2          
 %    3  |    4            3  |    4       
@@ -70,15 +67,17 @@ H2_MPO = mtimes_MPO (H_MPO, H_MPO, 25, Nsweep);
 
 
 for test = (1:5)
-    
+    dt = dts(test);
     T = Ts(test);
     Nkeep = Nkeeps(test);
+    SN = SNs(test);
     beta = 1/T; 
-    disptime(sprintf('For N=%d, spin=%d, beta=%1.3f, dt=%0.4f, Heisenberg chain, calculation started\n', N, 1, beta, dt));
+    disptime(sprintf('For N=%d, spin=%d, beta=%1.3f, dt=%0.4f, Heisenberg chain, calculation started', N, 1, beta, dt));
     tobj = tic2;
     % malloc space to save result
     E = zeros(SN, step_num);
     E2 = zeros(SN, step_num);
+    
     for itS=(1:SN)
         % Initialize state with random number
         M = cell(1,N);
@@ -96,43 +95,31 @@ for test = (1:5)
             [M, isright] = TS_1D(M, H, Nkeep, dt, beta/2, print_log);
             E(itS, step) = real(exp_val(M, H_MPO, ~isright)).*exp(lognorm_H_MPO);
             E2(itS, step) = real(exp_val(M, H2_MPO, ~isright)).*exp(2*lognorm_H_MPO);    
-        
+                    
             [M, idxes] = tmp_CPS_collapse(M, basis( :, :, mod(step+1, 2)+1), print_log);
-            
         end 
-%         [M, isright] = TS_1D(M, H, Nkeep, dt, beta/2, print_log);
-%         E(itS) = real(exp_val(M, H_MPO, ~isright)).*exp(lognorm_H_MPO);
-%         E2(itS) = real(exp_val(M, H2_MPO, ~isright)).*exp(2*lognorm_H_MPO);    
         
         if mod(itS, 5)==0
             [Cv, Cv_error] =  cal_specific_heat(E(1:itS, :), E2(1:itS, :), N, T);
             
             disptime(sprintf('T = %0.3f, specific heat = %0.4f in [%0.4f, %0.4f]', T,  Cv(end), Cv(end)-Cv_error(end), Cv(end)+Cv_error(end)));
             disptime(sprintf('Iteration %d ended', itS));
-            save(sprintf('../result/specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep), 'E', 'E2')
-    
+            save([PATH, sprintf('specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep)], 'E', 'E2')
+        
         end 
+       
     end 
 
-    [Cv, Cv_error] =  cal_specific_heat(E(1:end, :), E2(1:end, :), N, T);
-    
-    fprintf('T = %0.3f, specific heat = %0.4f\n', T,  Cv(end));
-    fprintf('specific heat in [%0.4f, %0.4f]\n', Cv(end)-Cv_error(end), Cv(end)+Cv_error(end));
-    
+    [Cv, Cv_error] =  cal_specific_heat(E, E2, N, T);
+            
+    disptime(sprintf('T = %0.3f, specific heat = %0.4f in [%0.4f, %0.4f]', T,  Cv(end), Cv(end)-Cv_error(end), Cv(end)+Cv_error(end)));
+            
     
     toc2(tobj,'-v');
     chkmem;
-    save(sprintf('../result/specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep), 'E', 'E2')
-    
+    save([PATH, sprintf('specific_heat_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, SN, dt, Nkeep)], 'E', 'E2')
+
     disptime('Save succeed')
 end 
 
-function [Cv, Cv_error] = cal_specific_heat(E, E2, N, T)
-    SN = size(E, 1);
-    Cv = (mean(E2, 1)-mean(E, 1).^2)./N;
-    Cv_error = Cv.^2.*sqrt(2/(SN-1))./T^2;%(std(E2, 1)-std(E,1).^2)./(N*T^2)./sqrt(SN-1);
-    Cv = Cv./(T^2);
-    
-    
-end 
 

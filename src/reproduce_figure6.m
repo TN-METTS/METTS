@@ -112,24 +112,28 @@ max_mixed = real(max_mixed)./N.*exp(lognorm_H_MPO);
 max_mixed_std= std(max_mixed, 0, 1);
 disptime('maximaly mixed ended')
 
-% plot the result 
-figure; 
-hold on ;
-errorbar((1:Step_num), mean(z_only, 1), z_only_std./sqrt(SN),'-s', 'MarkerSize',5,'MarkerEdgeColor','red','MarkerFaceColor','red', 'Color', 'red');
-errorbar((1:Step_num), mean(random, 1), random_std./sqrt(SN), '-o', 'MarkerSize',5,'MarkerEdgeColor','blue','MarkerFaceColor','blue', 'Color', 'blue');
-errorbar((1:Step_num), mean(max_mixed, 1), max_mixed_std./sqrt(SN), '-^', 'MarkerSize',5,'MarkerEdgeColor','green','MarkerFaceColor','green', 'Color', 'green');
-hold off;
-set(gca, 'FontSize', 13, 'LineWidth', 1);
-legend({'Z Only', 'Random', 'Maximally Mixed'})
-grid on;
-xlabel('Step Number');
-ylabel('Energy per Site');
-
 toc2(tobj,'-v');
 chkmem;
+% save result 
 save(sprintf('../result/E_measurement_SN=%d.mat', SN), 'z_only', 'max_mixed', 'random')
-savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
 disptime('Save succeed');
+
+
+% % plot the result 
+% figure; 
+% hold on ;
+% errorbar((1:Step_num), mean(z_only, 1), z_only_std./sqrt(SN),'-s', 'MarkerSize',5,'MarkerEdgeColor','red','MarkerFaceColor','red', 'Color', 'red');
+% errorbar((1:Step_num), mean(random, 1), random_std./sqrt(SN), '-o', 'MarkerSize',5,'MarkerEdgeColor','blue','MarkerFaceColor','blue', 'Color', 'blue');
+% errorbar((1:Step_num), mean(max_mixed, 1), max_mixed_std./sqrt(SN), '-^', 'MarkerSize',5,'MarkerEdgeColor','green','MarkerFaceColor','green', 'Color', 'green');
+% hold off;
+% set(gca, 'FontSize', 13, 'LineWidth', 1);
+% legend({'Z Only', 'Random', 'Maximally Mixed'})
+% grid on;
+% xlabel('Step Number');
+% ylabel('Energy per Site');
+% savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
+
+
 
 function rand_basis=basis_random_axis(S)
     dim =size(S, 3);

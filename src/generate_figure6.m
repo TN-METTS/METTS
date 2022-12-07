@@ -1,3 +1,6 @@
+% generate figure 6 from saved results 
+% It compares convergence 
+% Written by M.Kim (Dec.07,2022)
 
 SN=500;
 % load data 
@@ -21,3 +24,5 @@ legend({'Z Only', 'Random', 'Maximally Mixed'})
 grid on;
 xlabel('Step Number');
 ylabel('Energy per Site');
+
+savefig(sprintf('../result/Figure6_SN=%d.fig', SN))
