@@ -43,6 +43,7 @@ end
 
 prob = zeros(1,dim); % probability for each pure state
 idxes = zeros(1, N);
+probs = zeros(N, 3);
 [M,s,~] = canonForm(M,1,[],0); % site-canonical form with orthogonality center site 1
 M{1} = contract(M{1}, 3, 2, diag(s), 2, 1, [1 3 2]);
 
@@ -56,7 +57,7 @@ for it = (1:N)
 %     fprintf("At site %d| prob %0.4f, %0.4f, %0.4f, sum = %0.4f, norm = %0.4f\n", it, prob(1),prob(2),prob(3), sum(prob), contract(M{it}, 3, (1:3), conj(M{it}), 3,(1:3)));
     
     prob = prob./sum(prob, 'all'); %sum(prob, 'all') is 1 but divide with it to remove noise. 
-    
+    probs(it, :) = prob;
     % choose 1 state with projected probability
     rn = rand(1);
     probC = cumsum(prob);
