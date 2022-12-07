@@ -1,12 +1,12 @@
 # METTS
-This is the final exam of Tensor Network course in SNU. 2022 
+This is the final exam of Tensor Network course in SNU. 2022    
 Minimally Entangled Typical Quantum States(METTS) at Finite Temperature algorithms 
 
 ## Overview 
 This small project calculates expectation value of observables using METTS.    
 First, it calculates the energy and compare the convergence using the ensemble.    
 Second, it calculates the magnetic susceptibility and specific heat using METTS.    
-For the detail, refer the paper(https://iopscience.iop.org/article/10.1088/1367-2630/12/5/055026).    
+For the detail, refer the [paper](https://iopscience.iop.org/article/10.1088/1367-2630/12/5/055026).    
 
 
 
