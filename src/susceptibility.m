@@ -81,7 +81,7 @@ Sz2_MPO = mtimes_MPO(Sz_MPO, Sz_MPO, 40, Nsweep);
 
 
 
-for test = (5:5)%(1:5)
+for test = (1:5)%(1:5)
     dt = dts(test);
     T = Ts(test);
     Nkeep = Nkeeps(test);
@@ -118,13 +118,13 @@ for test = (5:5)%(1:5)
             mz2(itS, step) = mz(itS, step)^2; %sum(m*m', 'all');
         
         if mod(step, 5)==0
-            [chi, chi_error] = cal_susceptibility(mz(1:itS, 2:2:end), mz2(1:itS, 2:2:end), N, T);
-            [chi_MPO, chi_MPO_error] = cal_susceptibility(mz_MPO(1:itS, 3:end), mz2_MPO(1:itS, 3:end), N, T);
+            [chi, chi_error] = cal_susceptibility(mz(1:itS, 2:2:step), mz2(1:itS, 2:2:step), N, T);
+            [chi_MPO, chi_MPO_error] = cal_susceptibility(mz_MPO(1:itS, 3:step), mz2_MPO(1:itS, 3:step), N, T);
             
             disptime(sprintf('T = %0.3f, susceptibility = %0.4f in [%0.4f, %0.4f]', T,  chi(end), chi(end)-chi_error(end), chi(end)+chi_error(end)));            
             disptime(sprintf('T = %0.3f, susceptibility = %0.4f in [%0.4f, %0.4f] by MPO', T,  chi_MPO(end), chi_MPO(end)-chi_MPO_error(end), chi_MPO(end)+chi_MPO_error(end)));            
             disptime(sprintf('Iteration %d ended', step));
-            save([PATH, sprintf('tmp_susceptibility_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, step, dt, Nkeep)], 'mz', 'mz2', 'mz_MPO', 'mz2_MPO')
+            save([PATH, sprintf('susceptibility_T=%0.2f_SN=%d_dt=%0.4f_Nkeep=%d.mat', T, step_num, dt, Nkeep)], 'mz', 'mz2', 'mz_MPO', 'mz2_MPO')
         
         end 
         end
